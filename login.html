@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dark:    '#090A14',
+            primary: '#DF6B33',
+          },
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            inter:   ['Inter',   'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body { background-color: #090A14; font-family: 'Inter', sans-serif; }
+
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .custom-checkbox { appearance: none; -webkit-appearance: none; }
+    .custom-checkbox:checked { background-color: #DF6B33; border-color: #DF6B33; }
+    .custom-checkbox:checked::after {
+      content: '';
+      display: block;
+      width: 5px; height: 9px;
+      border: 2px solid #fff;
+      border-top: none; border-left: none;
+      transform: rotate(45deg) translate(1px, -1px);
+      margin: auto;
+    }
+    .custom-checkbox:focus { outline: none; box-shadow: 0 0 0 3px rgba(223,107,51,0.3); }
+
+    .field-input:focus { outline: none; border-color: #DF6B33; box-shadow: 0 0 0 3px rgba(223,107,51,0.2); }
+
+    .btn-primary:hover  { box-shadow: 0 0 24px rgba(223,107,51,0.45); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-social:hover  { border-color: rgba(223,107,51,0.5); background-color: rgba(223,107,51,0.06); }
+    .btn-social:active { transform: scale(0.98); }
+
+    .or-divider { position: relative; text-align: center; }
+    .or-divider::before, .or-divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: calc(50% - 28px);
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+    }
+    .or-divider::before { left: 0; }
+    .or-divider::after  { right: 0; }
+
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+
+    .toggle-eye { cursor: pointer; color: #6b7280; transition: color .2s; }
+    .toggle-eye:hover { color: #DF6B33; }
+
+    .field-input, .btn-primary, .btn-social { transition: all 0.2s ease; }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 16px rgba(223,107,51,0.4); }
+      50%       { box-shadow: 0 0 32px rgba(223,107,51,0.7); }
+    }
+    .logo-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .animate-spin { animation: spin 0.8s linear infinite; }
+  </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-x-hidden">
+
+  <div class="blob w-96 h-96" style="background:#DF6B33; top:-80px; left:-80px;"></div>
+  <div class="blob w-80 h-80" style="background:#4f46e5; bottom:-60px; right:-60px;"></div>
+
+  <div class="card relative z-10 w-full max-w-md rounded-2xl p-8 sm:p-10">
+
+    <!-- Logo & Heading -->
+    <div class="flex flex-col items-center mb-8">
+      <div class="logo-glow w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style="background:#DF6B33;">
+        <i data-lucide="zap" style="color:#fff; width:28px; height:28px;"></i>
+      </div>
+      <h1 style="font-family:'Poppins',sans-serif; font-weight:800; color:#fff; font-size:2rem; line-height:1.2; text-align:center; letter-spacing:-0.02em;">
+        Welcome back
+      </h1>
+      <p style="font-family:'Inter',sans-serif; color:#9ca3af; font-size:0.875rem; margin-top:8px; text-align:center;">
+        Sign in to continue to your account
+      </p>
+    </div>
+
+    <!-- Form -->
+    <form id="loginForm" novalidate>
+
+      <!-- Email -->
+      <div style="margin-bottom:20px;">
+        <label for="email" style="display:block; font-family:'Inter',sans-serif; font-size:0.875rem; font-weight:500; color:#d1d5db; margin-bottom:6px;">
+          Email address
+        </label>
+        <div style="position:relative;">
+          <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); pointer-events:none;">
+            <i data-lucide="mail" style="width:16px; height:16px; color:#6b7280;"></i>
+          </span>
+          <input
+            id="email"
+            type="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+            class="field-input"
+            style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:12px; padding:12px 16px 12px 42px; font-size:0.875rem; font-family:'Inter',sans-serif;"
+          />
+        </div>
+        <p id="emailError" style="display:none; font-family:'Inter',sans-serif; font-size:0.75rem; color:#f87171; margin-top:6px;">
+          Please enter a valid email address.
+        </p>
+      </div>
+
+      <!-- Password -->
+      <div style="margin-bottom:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+          <label for="password" style="font-family:'Inter',sans-serif; font-size:0.875rem; font-weight:500; color:#d1d5db;">
+            Password
+          </label>
+          <a href="#" style="font-family:'Inter',sans-serif; font-size:0.75rem; color:#DF6B33; text-decoration:none; transition:color .2s;"
+            onmouseover="this.style.color='#fb923c'" onmouseout="this.style.color='#DF6B33'">
+            Forgot password?
+          </a>
+        </div>
+        <div style="position:relative;">
+          <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); pointer-events:none;">
+            <i data-lucide="lock" style="width:16px; height:16px; color:#6b7280;"></i>
+          </span>
+          <input
+            id="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            class="field-input"
+            style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:12px; padding:12px 44px 12px 42px; font-size:0.875rem; font-family:'Inter',sans-serif;"
+          />
+          <button
+            type="button"
+            id="togglePassword"
+            class="toggle-eye"
+            style="position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; padding:0; display:flex; align-items:center;"
+            aria-label="Toggle password visibility"
+          >
+            <i data-lucide="eye" id="eyeIcon" style="width:16px; height:16px;"></i>
+          </button>
+        </div>
+        <p id="passwordError" style="display:none; font-family:'Inter',sans-serif; font-size:0.75rem; color:#f87171; margin-top:6px;">
+          Password must be at least 8 characters.
+        </p>
+      </div>
+
+      <!-- Remember me -->
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:24px;">
+        <input
+          type="checkbox"
+          id="remember"
+          class="custom-checkbox"
+          style="width:18px; height:18px; border-radius:5px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); cursor:pointer; flex-shrink:0;"
+        />
+        <label for="remember" style="font-family:'Inter',sans-serif; font-size:0.875rem; color:#9ca3af; cursor:pointer; user-select:none;">
+          Remember me for 30 days
+        </label>
+      </div>
+
+      <!-- Submit button -->
+      <button
+        type="submit"
+        id="submitBtn"
+        class="btn-primary"
+        style="width:100%; background:#DF6B33; color:#fff; font-family:'Inter',sans-serif; font-weight:600; font-size:0.875rem; border:none; border-radius:12px; padding:14px; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;"
+      >
+        <i data-lucide="log-in" style="width:16px; height:16px;"></i>
+        Sign in
+      </button>
+
+    </form>
+
+    <!-- Divider -->
+    <div class="or-divider" style="margin:28px 0;">
+      <span style="font-family:'Inter',sans-serif; font-size:0.75rem; color:#4b5563; padding:0 12px; position:relative; z-index:1;">
+        or continue with
+      </span>
+    </div>
+
+    <!-- Social buttons -->
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+
+      <!-- Google -->
+      <button
+        type="button"
+        class="btn-social"
+        style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all .2s;"
+        aria-label="Sign in with Google"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        <span style="font-family:'Inter',sans-serif; font-size:0.7rem; color:#d1d5db;">Google</span>
+      </button>
+
+      <!-- GitHub -->
+      <button
+        type="button"
+        class="btn-social"
+        style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all .2s;"
+        aria-label="Sign in with GitHub"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
+          <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/>
+        </svg>
+        <span style="font-family:'Inter',sans-serif; font-size:0.7rem; color:#d1d5db;">GitHub</span>
+      </button>
+
+      <!-- Facebook -->
+      <button
+        type="button"
+        class="btn-social"
+        style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all .2s;"
+        aria-label="Sign in with Facebook"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
+          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+        </svg>
+        <span style="font-family:'Inter',sans-serif; font-size:0.7rem; color:#d1d5db;">Facebook</span>
+      </button>
+
+    </div>
+
+    <!-- Sign up -->
+    <p style="font-family:'Inter',sans-serif; text-align:center; font-size:0.875rem; color:#6b7280; margin-top:32px;">
+      Don't have an account?
+      <a href="register.html" style="color:#DF6B33; font-weight:500; text-decoration:none; margin-left:4px; transition:color .2s;"
+        onmouseover="this.style.color='#fb923c'" onmouseout="this.style.color='#DF6B33'">
+        Sign up for free
+      </a>
+    </p>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // Password toggle
+    const toggleBtn  = document.getElementById('togglePassword');
+    const passwordEl = document.getElementById('password');
+    let visible = false;
+
+    toggleBtn.addEventListener('click', () => {
+      visible = !visible;
+      passwordEl.type = visible ? 'text' : 'password';
+      const icon = toggleBtn.querySelector('[data-lucide]');
+      icon.setAttribute('data-lucide', visible ? 'eye-off' : 'eye');
+      lucide.createIcons();
+    });
+
+    // Validation
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      let valid = true;
+
+      const email    = document.getElementById('email');
+      const password = document.getElementById('password');
+      const emailErr = document.getElementById('emailError');
+      const passErr  = document.getElementById('passwordError');
+
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
+      emailErr.style.display = emailOk ? 'none' : 'block';
+      email.style.borderColor = emailOk ? 'rgba(255,255,255,0.1)' : '#ef4444';
+      if (!emailOk) valid = false;
+
+      const passOk = password.value.length >= 8;
+      passErr.style.display = passOk ? 'none' : 'block';
+      password.style.borderColor = passOk ? 'rgba(255,255,255,0.1)' : '#ef4444';
+      if (!passOk) valid = false;
+
+      if (valid) {
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<svg class="animate-spin" style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity=".25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg> Signing in…';
+        btn.disabled = true;
+        btn.style.opacity = '0.8';
+        setTimeout(() => {
+          btn.innerHTML = '<svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Signed in!';
+          btn.style.background = '#16a34a';
+          btn.style.opacity = '1';
+          lucide.createIcons();
+        }, 1800);
+      }
+    });
+
+    ['email','password'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        document.getElementById(id + 'Error').style.display = 'none';
+        document.getElementById(id).style.borderColor = 'rgba(255,255,255,0.1)';
+      });
+    });
+  </script>
+</body>
+</html>
