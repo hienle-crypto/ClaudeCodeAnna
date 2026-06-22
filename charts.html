@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-Commerce Analytics Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#DF6B33',
+            'primary-alt': '#fb923c',
+            success: '#16a34a',
+            error: '#ef4444',
+            navy: '#090A14',
+          },
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            inter: ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #090A14;
+      font-family: 'Inter', sans-serif;
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 16px;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 20px 24px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .stat-card:hover {
+      border-color: rgba(223,107,51,0.3);
+      transform: translateY(-2px);
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 16px rgba(223,107,51,0.4); }
+      50%       { box-shadow: 0 0 32px rgba(223,107,51,0.7); }
+    }
+    .logo-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+    .chart-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-up { background: rgba(22,163,74,0.15); color: #4ade80; }
+    .badge-down { background: rgba(239,68,68,0.15); color: #f87171; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 10px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    td {
+      padding: 14px 16px;
+      font-size: 0.875rem;
+      color: #d1d5db;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .tab-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      color: #9ca3af;
+      background: transparent;
+    }
+    .tab-btn.active {
+      background: rgba(223,107,51,0.15);
+      color: #DF6B33;
+    }
+    .tab-btn:hover:not(.active) {
+      color: #d1d5db;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .progress-bar {
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.07);
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #DF6B33, #fb923c);
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <!-- Blob nền -->
+  <div class="blob w-96 h-96" style="background:#DF6B33; top:-80px; left:-80px;"></div>
+  <div class="blob w-80 h-80" style="background:#4f46e5; bottom:-60px; right:-60px;"></div>
+
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- ── Header ── -->
+    <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
+      <div class="flex items-center gap-4">
+        <div class="logo-glow w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+             style="background:#DF6B33;">
+          <i data-lucide="bar-chart-3" style="color:#fff; width:24px; height:24px;"></i>
+        </div>
+        <div>
+          <h1 style="font-family:'Poppins',sans-serif; font-weight:800; font-size:1.5rem; letter-spacing:-0.02em;">
+            E-Commerce Analytics
+          </h1>
+          <p style="color:#6b7280; font-size:0.8125rem; margin-top:2px;">
+            Báo cáo kinh doanh & marketing · Q2 2025
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:8px 14px; font-size:0.8125rem; color:#9ca3af; display:flex; align-items:center; gap:8px;">
+          <i data-lucide="calendar" style="width:14px; height:14px; color:#DF6B33;"></i>
+          Jan 2025 – Jun 2025
+        </div>
+        <button onclick="window.print()" style="background:#DF6B33; color:#fff; border:none; border-radius:10px; padding:9px 16px; font-size:0.8125rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;" onmouseover="this.style.boxShadow='0 0 20px rgba(223,107,51,0.45)'" onmouseout="this.style.boxShadow='none'">
+          <i data-lucide="download" style="width:14px; height:14px;"></i>
+          Export
+        </button>
+      </div>
+    </div>
+
+    <!-- ── KPI Cards ── -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-3">
+          <div style="width:36px; height:36px; border-radius:10px; background:rgba(223,107,51,0.15); display:flex; align-items:center; justify-content:center;">
+            <i data-lucide="dollar-sign" style="width:18px; height:18px; color:#DF6B33;"></i>
+          </div>
+          <span class="badge badge-up">
+            <i data-lucide="trending-up" style="width:11px; height:11px;"></i>+18.4%
+          </span>
+        </div>
+        <div style="font-size:1.625rem; font-weight:700; letter-spacing:-0.02em;">$4.82M</div>
+        <div style="font-size:0.8125rem; color:#6b7280; margin-top:3px;">Tổng doanh thu</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-3">
+          <div style="width:36px; height:36px; border-radius:10px; background:rgba(79,70,229,0.15); display:flex; align-items:center; justify-content:center;">
+            <i data-lucide="shopping-bag" style="width:18px; height:18px; color:#818cf8;"></i>
+          </div>
+          <span class="badge badge-up">
+            <i data-lucide="trending-up" style="width:11px; height:11px;"></i>+12.7%
+          </span>
+        </div>
+        <div style="font-size:1.625rem; font-weight:700; letter-spacing:-0.02em;">38,940</div>
+        <div style="font-size:0.8125rem; color:#6b7280; margin-top:3px;">Đơn hàng</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-3">
+          <div style="width:36px; height:36px; border-radius:10px; background:rgba(22,163,74,0.15); display:flex; align-items:center; justify-content:center;">
+            <i data-lucide="users" style="width:18px; height:18px; color:#4ade80;"></i>
+          </div>
+          <span class="badge badge-up">
+            <i data-lucide="trending-up" style="width:11px; height:11px;"></i>+9.2%
+          </span>
+        </div>
+        <div style="font-size:1.625rem; font-weight:700; letter-spacing:-0.02em;">124.5K</div>
+        <div style="font-size:0.8125rem; color:#6b7280; margin-top:3px;">Khách hàng</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-3">
+          <div style="width:36px; height:36px; border-radius:10px; background:rgba(239,68,68,0.15); display:flex; align-items:center; justify-content:center;">
+            <i data-lucide="percent" style="width:18px; height:18px; color:#f87171;"></i>
+          </div>
+          <span class="badge badge-down">
+            <i data-lucide="trending-down" style="width:11px; height:11px;"></i>-1.3%
+          </span>
+        </div>
+        <div style="font-size:1.625rem; font-weight:700; letter-spacing:-0.02em;">3.47%</div>
+        <div style="font-size:0.8125rem; color:#6b7280; margin-top:3px;">Tỷ lệ chuyển đổi</div>
+      </div>
+    </div>
+
+    <!-- ── Row 1: Revenue Chart + Donut ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+      <!-- Revenue Line Chart -->
+      <div class="chart-card lg:col-span-2">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div>
+            <h2 style="font-weight:600; font-size:1rem;">Doanh thu theo tháng</h2>
+            <p style="font-size:0.8125rem; color:#6b7280; margin-top:2px;">So sánh năm 2024 & 2025</p>
+          </div>
+          <div class="flex gap-1">
+            <button class="tab-btn active" onclick="setRevenueView(this, 'all')">Tất cả</button>
+            <button class="tab-btn" onclick="setRevenueView(this, '2025')">2025</button>
+            <button class="tab-btn" onclick="setRevenueView(this, '2024')">2024</button>
+          </div>
+        </div>
+        <canvas id="revenueChart" height="260"></canvas>
+      </div>
+
+      <!-- Revenue by Category Donut -->
+      <div class="chart-card flex flex-col">
+        <h2 style="font-weight:600; font-size:1rem; margin-bottom:4px;">Doanh thu theo danh mục</h2>
+        <p style="font-size:0.8125rem; color:#6b7280; margin-bottom:20px;">Tỷ trọng Q2/2025</p>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+          <canvas id="categoryChart" style="max-height:200px;"></canvas>
+        </div>
+        <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div style="width:10px; height:10px; border-radius:50%; background:#DF6B33; flex-shrink:0;"></div>
+              <span style="font-size:0.8125rem; color:#d1d5db;">Thời trang</span>
+            </div>
+            <span style="font-size:0.8125rem; font-weight:600;">34%</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div style="width:10px; height:10px; border-radius:50%; background:#818cf8; flex-shrink:0;"></div>
+              <span style="font-size:0.8125rem; color:#d1d5db;">Điện tử</span>
+            </div>
+            <span style="font-size:0.8125rem; font-weight:600;">27%</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div style="width:10px; height:10px; border-radius:50%; background:#4ade80; flex-shrink:0;"></div>
+              <span style="font-size:0.8125rem; color:#d1d5db;">Gia dụng</span>
+            </div>
+            <span style="font-size:0.8125rem; font-weight:600;">19%</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div style="width:10px; height:10px; border-radius:50%; background:#facc15; flex-shrink:0;"></div>
+              <span style="font-size:0.8125rem; color:#d1d5db;">Làm đẹp</span>
+            </div>
+            <span style="font-size:0.8125rem; font-weight:600;">13%</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div style="width:10px; height:10px; border-radius:50%; background:#6b7280; flex-shrink:0;"></div>
+              <span style="font-size:0.8125rem; color:#d1d5db;">Khác</span>
+            </div>
+            <span style="font-size:0.8125rem; font-weight:600;">7%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Row 2: Bar Chart + Funnel ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+      <!-- Orders Bar Chart -->
+      <div class="chart-card">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div>
+            <h2 style="font-weight:600; font-size:1rem;">Đơn hàng & Lợi nhuận gộp</h2>
+            <p style="font-size:0.8125rem; color:#6b7280; margin-top:2px;">Theo tháng · H1 2025</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; font-size:0.75rem; color:#9ca3af;">
+            <div class="flex items-center gap-1.5">
+              <div style="width:10px; height:10px; border-radius:2px; background:#DF6B33;"></div> Đơn hàng
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div style="width:10px; height:10px; border-radius:2px; background:#818cf8;"></div> Lợi nhuận
+            </div>
+          </div>
+        </div>
+        <canvas id="ordersChart" height="220"></canvas>
+      </div>
+
+      <!-- Marketing Channels Bar -->
+      <div class="chart-card">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div>
+            <h2 style="font-weight:600; font-size:1rem;">Hiệu quả kênh Marketing</h2>
+            <p style="font-size:0.8125rem; color:#6b7280; margin-top:2px;">Sessions & Conversion · Q2/2025</p>
+          </div>
+        </div>
+        <canvas id="marketingChart" height="220"></canvas>
+      </div>
+    </div>
+
+    <!-- ── Row 3: Line Chart (Marketing Trend) + Radar ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+      <!-- Marketing Spend vs Revenue Trend -->
+      <div class="chart-card lg:col-span-2">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div>
+            <h2 style="font-weight:600; font-size:1rem;">Chi phí Marketing vs Doanh thu</h2>
+            <p style="font-size:0.8125rem; color:#6b7280; margin-top:2px;">ROAS & ROI trend · H1 2025</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; font-size:0.75rem; color:#9ca3af;">
+            <div class="flex items-center gap-1.5">
+              <div style="width:10px; height:2px; background:#DF6B33;"></div> Doanh thu
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div style="width:10px; height:2px; background:#818cf8; border-style:dashed; border-top:2px dashed #818cf8;"></div> Chi phí MKT
+            </div>
+          </div>
+        </div>
+        <canvas id="roasChart" height="220"></canvas>
+      </div>
+
+      <!-- KPI Radar -->
+      <div class="chart-card flex flex-col">
+        <h2 style="font-weight:600; font-size:1rem; margin-bottom:4px;">Chỉ số KPI tổng hợp</h2>
+        <p style="font-size:0.8125rem; color:#6b7280; margin-bottom:16px;">So sánh Target vs Actual</p>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+          <canvas id="radarChart" style="max-height:240px;"></canvas>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin-top:12px; font-size:0.75rem; color:#9ca3af;">
+          <div class="flex items-center gap-1.5">
+            <div style="width:10px; height:10px; border-radius:50%; background:#DF6B33; opacity:0.7;"></div> Actual
+          </div>
+          <div class="flex items-center gap-1.5">
+            <div style="width:10px; height:10px; border-radius:50%; background:#818cf8; opacity:0.7;"></div> Target
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Row 4: Tables ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+      <!-- Top Products Table -->
+      <div class="chart-card">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 style="font-weight:600; font-size:1rem;">Top sản phẩm bán chạy</h2>
+            <p style="font-size:0.8125rem; color:#6b7280; margin-top:2px;">Theo doanh thu · Q2/2025</p>
+          </div>
+          <span style="font-size:0.75rem; color:#DF6B33; font-weight:500; cursor:pointer;" onmouseover="this.style.color='#fb923c'" onmouseout="this.style.color='#DF6B33'">Xem tất cả →</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Sản phẩm</th>
+                <th>Danh mục</th>
+                <th>Doanh thu</th>
+                <th>Tăng trưởng</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="color:#DF6B33; font-weight:600;">01</td>
+                <td>
+                  <div style="font-weight:500; color:#fff;">Nike Air Max 270</div>
+                  <div style="font-size:0.75rem; color:#6b7280;">SKU-00142</div>
+                </td>
+                <td><span style="background:rgba(223,107,51,0.12); color:#fb923c; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:500;">Thời trang</span></td>
+                <td style="font-weight:600; color:#fff;">$182,400</td>
+                <td><span class="badge badge-up"><i data-lucide="trending-up" style="width:10px; height:10px;"></i>+24%</span></td>
+              </tr>
+              <tr>
+                <td style="color:#DF6B33; font-weight:600;">02</td>
+                <td>
+                  <div style="font-weight:500; color:#fff;">iPhone 15 Pro Max</div>
+                  <div style="font-size:0.75rem; color:#6b7280;">SKU-00089</div>
+                </td>
+                <td><span style="background:rgba(129,140,248,0.12); color:#818cf8; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:500;">Điện tử</span></td>
+                <td style="font-weight:600; color:#fff;">$164,800</td>
+                <td><span class="badge badge-up"><i data-lucide="trending-up" style="width:10px; height:10px;"></i>+18%</span></td>
+              </tr>
+              <tr>
+                <td style="color:#DF6B33; font-weight:600;">03</td>
+                <td>
+                  <div style="font-weight:500; color:#fff;">Máy lọc không khí Xiaomi</div>
+                  <div style="font-size:0.75rem; color:#6b7280;">SKU-00211</div>
+                </td>
+                <td><span style="background:rgba(74,222,128,0.12); color:#4ade80; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:500;">Gia dụng</span></td>
+                <td style="font-weight:600; color:#fff;">$98,600</td>
+                <td><span class="badge badge-up"><i data-lucide="trending-up" style="width:10px; height:10px;"></i>+31%</span></td>
+              </tr>
+              <tr>
+                <td style="color:#DF6B33; font-weight:600;">04</td>
+                <td>
+                  <div style="font-weight:500; color:#fff;">Kem dưỡng da Laneige</div>
+                  <div style="font-size:0.75rem; color:#6b7280;">SKU-00334</div>
+                </td>
+                <td><span style="background:rgba(250,204,21,0.12); color:#facc15; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:500;">Làm đẹp</span></td>
+                <td style="font-weight:600; color:#fff;">$76,200</td>
+                <td><span class="badge badge-down"><i data-lucide="trending-down" style="width:10px; height:10px;"></i>-5%</span></td>
+              </tr>
+              <tr>
+                <td style="color:#DF6B33; font-weight:600;">05</td>
+                <td>
+                  <div style="font-weight:500; color:#fff;">Samsung 4K Smart TV 55"</div>
+                  <div style="font-size:0.75rem; color:#6b7280;">SKU-00098</div>
+                </td>
+                <td><span style="background:rgba(129,140,248,0.12); color:#818cf8; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:500;">Điện tử</span></td>
+                <td style="font-weight:600; color:#fff;">$71,500</td>
+                <td><span class="badge badge-up"><i data-lucide="trending-up" style="width:10px; height:10px;"></i>+9%</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Marketing Campaign Table -->
+      <div class="chart-card">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 style="font-weight:600; font-size:1rem;">Chiến dịch Marketing</h2>
+            <p style="font-size:0.8125rem; color:#6b7280; margin-top:2px;">Hiệu quả & ROI · Q2/2025</p>
+          </div>
+          <span style="font-size:0.75rem; color:#DF6B33; font-weight:500; cursor:pointer;" onmouseover="this.style.color='#fb923c'" onmouseout="this.style.color='#DF6B33'">Xem tất cả →</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Chiến dịch</th>
+                <th>Ngân sách</th>
+                <th>Doanh thu</th>
+                <th>ROAS</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div style="font-weight:500; color:#fff;">Summer Sale 2025</div>
+                  <div style="font-size:0.75rem; color:#6b7280;">Google Ads · Facebook</div>
+                </td>
+                <td>$48,000</td>
+                <td style="color:#4ade80; font-weight:600;">$312,000</td>
+                <td>
+                  <div style="font-weight:700; color:#DF6B33;">6.5x</div>
+                </td>
+                <td><span style="background:rgba(22,163,74,0.15); color:#4ade80; padding:3px 10px; border-radius:9999px; font-size:0.75rem; font-weight:600;">Active</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="font-weight:500; color:#fff;">Flash Deal Weekend</div>
+                  <div style="font-size:0.75rem; color:#6b7280;">TikTok Ads · Instagram</div>
+                </td>
+                <td>$22,500</td>
+                <td style="color:#4ade80; font-weight:600;">$108,000</td>
+                <td>
+                  <div style="font-weight:700; color:#DF6B33;">4.8x</div>
+                </td>
+                <td><span style="background:rgba(22,163,74,0.15); color:#4ade80; padding:3px 10px; border-radius:9999px; font-size:0.75rem; font-weight:600;">Active</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="font-weight:500; color:#fff;">Brand Awareness Q2</div>
+                  <div style="font-size:0.75rem; color:#6b7280;">YouTube · Display</div>
+                </td>
+                <td>$35,000</td>
+                <td style="color:#4ade80; font-weight:600;">$89,500</td>
+                <td>
+                  <div style="font-weight:700; color:#fb923c;">2.6x</div>
+                </td>
+                <td><span style="background:rgba(250,204,21,0.15); color:#facc15; padding:3px 10px; border-radius:9999px; font-size:0.75rem; font-weight:600;">Review</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="font-weight:500; color:#fff;">Email Retargeting</div>
+                  <div style="font-size:0.75rem; color:#6b7280;">Email Marketing</div>
+                </td>
+                <td>$8,200</td>
+                <td style="color:#4ade80; font-weight:600;">$74,600</td>
+                <td>
+                  <div style="font-weight:700; color:#DF6B33;">9.1x</div>
+                </td>
+                <td><span style="background:rgba(22,163,74,0.15); color:#4ade80; padding:3px 10px; border-radius:9999px; font-size:0.75rem; font-weight:600;">Active</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="font-weight:500; color:#fff;">Influencer Campaign</div>
+                  <div style="font-size:0.75rem; color:#6b7280;">KOL · TikTok</div>
+                </td>
+                <td>$18,000</td>
+                <td style="color:#f87171; font-weight:600;">$29,400</td>
+                <td>
+                  <div style="font-weight:700; color:#f87171;">1.6x</div>
+                </td>
+                <td><span style="background:rgba(239,68,68,0.15); color:#f87171; padding:3px 10px; border-radius:9999px; font-size:0.75rem; font-weight:600;">Paused</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Row 5: Channel Performance Progress Bars ── -->
+    <div class="chart-card mb-6">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 style="font-weight:600; font-size:1rem;">Tỷ lệ chuyển đổi theo kênh bán hàng</h2>
+          <p style="font-size:0.8125rem; color:#6b7280; margin-top:2px;">Conversion rate & doanh thu đóng góp · Q2/2025</p>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px 40px;">
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <i data-lucide="monitor" style="width:15px; height:15px; color:#DF6B33;"></i>
+              <span style="font-size:0.875rem; color:#d1d5db;">Website</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:0.8125rem; color:#fff; font-weight:600;">$2.1M</span>
+              <span style="font-size:0.8125rem; color:#9ca3af;">4.2%</span>
+            </div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:86%;"></div></div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <i data-lucide="smartphone" style="width:15px; height:15px; color:#818cf8;"></i>
+              <span style="font-size:0.875rem; color:#d1d5db;">Mobile App</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:0.8125rem; color:#fff; font-weight:600;">$1.4M</span>
+              <span style="font-size:0.8125rem; color:#9ca3af;">3.8%</span>
+            </div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:57%; background:linear-gradient(90deg,#818cf8,#a5b4fc);"></div></div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <i data-lucide="store" style="width:15px; height:15px; color:#4ade80;"></i>
+              <span style="font-size:0.875rem; color:#d1d5db;">Marketplace (Shopee)</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:0.8125rem; color:#fff; font-weight:600;">$780K</span>
+              <span style="font-size:0.8125rem; color:#9ca3af;">2.9%</span>
+            </div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:32%; background:linear-gradient(90deg,#4ade80,#86efac);"></div></div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <i data-lucide="instagram" style="width:15px; height:15px; color:#facc15;"></i>
+              <span style="font-size:0.875rem; color:#d1d5db;">Social Commerce</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:0.8125rem; color:#fff; font-weight:600;">$340K</span>
+              <span style="font-size:0.8125rem; color:#9ca3af;">1.7%</span>
+            </div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:14%; background:linear-gradient(90deg,#facc15,#fde68a);"></div></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Footer ── -->
+    <div style="text-align:center; font-size:0.8125rem; color:#374151; margin-top:8px; padding-bottom:8px;">
+      E-Commerce Analytics Dashboard · Dữ liệu mock demo · Q2 2025
+    </div>
+
+  </div><!-- /container -->
+
+  <script>
+    lucide.createIcons();
+
+    // ── Chart defaults ──
+    Chart.defaults.color = '#6b7280';
+    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.font.size = 12;
+
+    const gridColor = 'rgba(255,255,255,0.05)';
+    const months = ['Jan','Feb','Mar','Apr','May','Jun'];
+
+    // ── 1. Revenue Line Chart ──
+    const revenueData2025 = [620, 710, 780, 850, 920, 940];
+    const revenueData2024 = [510, 560, 640, 690, 760, 820];
+
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+
+    const grad1 = revenueCtx.createLinearGradient(0,0,0,260);
+    grad1.addColorStop(0,'rgba(223,107,51,0.25)');
+    grad1.addColorStop(1,'rgba(223,107,51,0)');
+
+    const grad2 = revenueCtx.createLinearGradient(0,0,0,260);
+    grad2.addColorStop(0,'rgba(129,140,248,0.15)');
+    grad2.addColorStop(1,'rgba(129,140,248,0)');
+
+    const revenueChart = new Chart(revenueCtx, {
+      type: 'line',
+      data: {
+        labels: months,
+        datasets: [
+          {
+            label: '2025',
+            data: revenueData2025,
+            borderColor: '#DF6B33',
+            backgroundColor: grad1,
+            borderWidth: 2.5,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#DF6B33',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+          },
+          {
+            label: '2024',
+            data: revenueData2024,
+            borderColor: '#818cf8',
+            backgroundColor: grad2,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#818cf8',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            borderDash: [5,4],
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(9,10,20,0.92)',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            padding: 12,
+            callbacks: {
+              label: ctx => ` $${ctx.parsed.y}K`
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: '#6b7280' } },
+          y: {
+            grid: { color: gridColor },
+            ticks: { color: '#6b7280', callback: v => '$' + v + 'K' }
+          }
+        }
+      }
+    });
+
+    function setRevenueView(btn, view) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (view === 'all') {
+        revenueChart.data.datasets[0].hidden = false;
+        revenueChart.data.datasets[1].hidden = false;
+      } else if (view === '2025') {
+        revenueChart.data.datasets[0].hidden = false;
+        revenueChart.data.datasets[1].hidden = true;
+      } else {
+        revenueChart.data.datasets[0].hidden = true;
+        revenueChart.data.datasets[1].hidden = false;
+      }
+      revenueChart.update();
+    }
+
+    // ── 2. Category Donut Chart ──
+    new Chart(document.getElementById('categoryChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Thời trang','Điện tử','Gia dụng','Làm đẹp','Khác'],
+        datasets: [{
+          data: [34,27,19,13,7],
+          backgroundColor: ['#DF6B33','#818cf8','#4ade80','#facc15','#374151'],
+          borderWidth: 0,
+          hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '68%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(9,10,20,0.92)',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` }
+          }
+        }
+      }
+    });
+
+    // ── 3. Orders & Profit Bar Chart ──
+    new Chart(document.getElementById('ordersChart'), {
+      type: 'bar',
+      data: {
+        labels: months,
+        datasets: [
+          {
+            label: 'Đơn hàng (K)',
+            data: [5.8, 6.2, 6.9, 7.1, 6.8, 6.1],
+            backgroundColor: 'rgba(223,107,51,0.75)',
+            borderRadius: 6,
+            borderSkipped: false,
+          },
+          {
+            label: 'Lợi nhuận gộp (K)',
+            data: [2.1, 2.4, 2.8, 3.0, 2.7, 2.5],
+            backgroundColor: 'rgba(129,140,248,0.65)',
+            borderRadius: 6,
+            borderSkipped: false,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { display: false }, tooltip: {
+          backgroundColor: 'rgba(9,10,20,0.92)',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+        }},
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#6b7280' } },
+          y: { grid: { color: gridColor }, ticks: { color: '#6b7280' } }
+        }
+      }
+    });
+
+    // ── 4. Marketing Channels Horizontal Bar ──
+    new Chart(document.getElementById('marketingChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Google Ads','Facebook','TikTok','Email','SEO Organic','Instagram'],
+        datasets: [
+          {
+            label: 'Sessions (K)',
+            data: [142, 98, 76, 54, 188, 62],
+            backgroundColor: 'rgba(223,107,51,0.7)',
+            borderRadius: 5,
+          },
+          {
+            label: 'Conversions (K)',
+            data: [6.2, 3.8, 2.4, 4.1, 5.8, 1.9],
+            backgroundColor: 'rgba(74,222,128,0.7)',
+            borderRadius: 5,
+          }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { display: false }, tooltip: {
+          backgroundColor: 'rgba(9,10,20,0.92)',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+        }},
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: '#6b7280' } },
+          y: { grid: { display: false }, ticks: { color: '#9ca3af' } }
+        }
+      }
+    });
+
+    // ── 5. ROAS Chart (dual line) ──
+    const roasCtx = document.getElementById('roasChart').getContext('2d');
+    const gradR = roasCtx.createLinearGradient(0,0,0,220);
+    gradR.addColorStop(0,'rgba(223,107,51,0.2)');
+    gradR.addColorStop(1,'rgba(223,107,51,0)');
+
+    new Chart(roasCtx, {
+      type: 'line',
+      data: {
+        labels: months,
+        datasets: [
+          {
+            label: 'Doanh thu ($K)',
+            data: [620,710,780,850,920,940],
+            borderColor: '#DF6B33',
+            backgroundColor: gradR,
+            borderWidth: 2.5,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#DF6B33',
+            pointRadius: 4,
+          },
+          {
+            label: 'Chi phí MKT ($K)',
+            data: [95,102,118,130,142,138],
+            borderColor: '#818cf8',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            borderDash: [6,4],
+            tension: 0.4,
+            pointBackgroundColor: '#818cf8',
+            pointRadius: 3,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(9,10,20,0.92)',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            padding: 12,
+            callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y}K` }
+          }
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: '#6b7280' } },
+          y: { grid: { color: gridColor }, ticks: { color: '#6b7280', callback: v => '$'+v+'K' } }
+        }
+      }
+    });
+
+    // ── 6. Radar KPI Chart ──
+    new Chart(document.getElementById('radarChart'), {
+      type: 'radar',
+      data: {
+        labels: ['Doanh thu','Đơn hàng','Khách hàng','ROAS','CVR','NPS'],
+        datasets: [
+          {
+            label: 'Actual',
+            data: [88, 82, 79, 91, 67, 84],
+            backgroundColor: 'rgba(223,107,51,0.18)',
+            borderColor: '#DF6B33',
+            borderWidth: 2,
+            pointBackgroundColor: '#DF6B33',
+            pointRadius: 4,
+          },
+          {
+            label: 'Target',
+            data: [80,80,80,80,80,80],
+            backgroundColor: 'rgba(129,140,248,0.08)',
+            borderColor: 'rgba(129,140,248,0.5)',
+            borderWidth: 1.5,
+            borderDash: [4,3],
+            pointBackgroundColor: '#818cf8',
+            pointRadius: 3,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: {
+          backgroundColor: 'rgba(9,10,20,0.92)',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+        }},
+        scales: {
+          r: {
+            min: 0, max: 100,
+            grid: { color: 'rgba(255,255,255,0.07)' },
+            angleLines: { color: 'rgba(255,255,255,0.07)' },
+            ticks: { display: false },
+            pointLabels: { color: '#9ca3af', font: { size: 11 } }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
